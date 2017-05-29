@@ -554,7 +554,7 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
       const startIndex = (brushItem && brushItem.props && brushItem.props.startIndex) || 0;
       const endIndex = (brushItem && brushItem.props && brushItem.props.endIndex)
       || ((props.data && (props.data.length - 1)) || 0);
-      return {
+      const state = {
         chartX: 0,
         chartY: 0,
         dataStartIndex: startIndex,
@@ -562,6 +562,15 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
         activeTooltipIndex: -1,
         isTooltipActive: false,
       };
+
+      if (this.mouseEvent) {
+        return {
+          ...state,
+          ...this.getMouseInfo(this.mouseEvent),
+          isTooltipActive: true,
+        };
+      }
+      return state;
     }
     /**
      * Calculate the offset of main part in the svg element
@@ -695,6 +704,8 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
     handleMouseEnter = (e) => {
       const { onMouseEnter } = this.props;
       const mouse = this.getMouseInfo(e);
+      e.persist();
+      this.mouseEvent = e;
 
       if (mouse) {
         const nextState = { ...mouse, isTooltipActive: true };
@@ -710,6 +721,7 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
     triggeredAfterMouseMove = (e) => {
       const { onMouseMove } = this.props;
       const mouse = this.getMouseInfo(e);
+      this.mouseEvent = e;
       const nextState = mouse ? { ...mouse, isTooltipActive: true } : { isTooltipActive: false };
 
       this.setState(nextState);
@@ -728,6 +740,7 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
     handleMouseMove = (e) => {
       if (e && _.isFunction(e.persist)) {
         e.persist();
+        this.mouseEvent = e;
         this.triggeredAfterMouseMove(e);
       }
     }
@@ -739,6 +752,7 @@ const generateCategoricalChart = (ChartComponent, GraphicalChild) => {
     handleMouseLeave = (e) => {
       const { onMouseLeave } = this.props;
       const nextState = { isTooltipActive: false };
+      delete this.mouseEvent;
 
       this.setState(nextState);
       this.triggerSyncEvent(nextState);
